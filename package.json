@@ -1,0 +1,21 @@
+{
+  "name": "nvi-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node bin/prod",
+    "nodemon": "nodemon --ignore '*.json' bin/prod",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Yunus Emre Koker",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "cli-progress": "^3.7.0",
+    "jssoup": "0.0.11",
+    "node-fetch": "^2.6.0",
+    "ora": "^4.0.3",
+    "set-cookie-parser": "^2.4.5"
+  }
+}
