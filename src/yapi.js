@@ -46,33 +46,49 @@ class Yapi {
   getData = async () =>{
     if(!await this.controller(this.mainFileName)){
       this.response = await this.getDataFromNvi()
-      // this.spinner.succeed(`${this.constructorName} alindi, kayit edildi`)
+      this.spinner.succeed(`${this.constructorName} alindi, kayit edildi`)
     }
     else{
       this.response = await this.getDataFromLocal()
       this.spinner.succeed(`${this.constructorName} kayitli dosyadan alindi`)
     }
   }
-  getLength = async()=>{
+  getLength = async(node=this.response)=>{
     if (this.length) {
       return this.length
     }
     else{
-      
+      let length = 0;
+
+         await Object.keys(node).forEach(async (childrens) => {
+          if (childrens.childrens) {
+              const childrenLength = await this.getLength(childrens.childrens)
+              length += childrenLength
+          }
+          else{
+            length++;
+          }
+        })
+
+      return length;
     }
   }
-  getNode = async (ilNo,ilceNo,mahalleNo,sokakNo)=>{
-    const ilNode = await this.response[ilNo]
-    const ilceNode = ilceNo ?
-      await ilNode.ilceler[ilceNo] : undefined
-    const mahalleNode = mahalleNo ?
-      await ilceNode.mahalleler[mahalleNo] : undefined
-    const sokakNode = sokakNo ?
-      await mahalleNode.sokaklar[sokakNo] : undefined
-    return sokakNode || mahalleNode || ilceNode || ilNode
+  getNode = async (numbers,data=this.response)=>{
+    const a = numbers[0]
+    const b = numbers[1]
+    const c = numbers[2]
+    const d = numbers[3]
+    const e = numbers[4]
+    console.log(data);
+    const node = await data[a]
+    if(node.childrens){
+      return await this.getNode([b,c,d,e],node.childrens)
+    }
+    return node
   }
 
-  looperCollector = async() => {
+  looperCollector = async(params) => {
+    const {parent,mahalle} = params || {}
     if(!this.progress){
       this.progress = 0;
     }
@@ -80,18 +96,32 @@ class Yapi {
       this.totalLength = 1;
     }
     const {parents} = this
-    if (parents[0]) {
-      const parentLength = await parents[0].getLength()
-      for (var i = 0; i < parentLength +1 ; i++) {
-        const parent = await parents[0].getNode(i)
-        console.log(i);
+    var mainParent = parents.find(x=>x!==undefined);
+    var mainParentIndex = parents.findIndex(x=>x===mainParent);
+    parents.shift();
+    if (mainParent) {
+      const parentLength = await mainParent.getLength()
+      this.totalLength= parentLength
+      const hub = []
+      for (var i = 1; i < parentLength +1 ; i++) {
+        const node = await mainParent.getNode([i])
+        const data = await this.looperCollector({parent:node})
+        hub.push({parent:node,kimlikNo:node.kimlikNo,childrens:data})
       }
+      return hub
     }
     else{
-      const data = await this.connector(this.path,{})
+      const params = {};
+      if (this.argument) {
+        params[this.argument] = parent.kimlikNo
+      }
+      if(mahalle){
+        params.mahalleKoyBaglisiListesi = mahalle.kimlikNo
+      }
+      const data = await this.connector(this.path,params)
       this.spinner.text = (`${this.constructorName} Aliniyor | ${this.progress}/${this.totalLength}`)
       this.progress++
-      length+= Object.keys(data).length
+      this.length+= Object.keys(data).length
       return data
     }
 
@@ -102,9 +132,11 @@ class Yapi {
     const formattedData = await this.formatData(data)
     return formattedData
   }
+
   getDataFromNvi = async () =>{
     const data = await this.looperCollector()
-    await this.saveData(undefined,data)
+    const formattedData = await this.formatData(data)
+    await this.saveData(undefined,formattedData)
     return await data
   }
   getDataFromLocal = async () =>{

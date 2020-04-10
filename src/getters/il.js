@@ -19,8 +19,5 @@ class Il extends Yapi{
   constructorName='Iller'
   mainFileName = 'Iller'
   path='ilListesi'
-  getLength = async ()=>{
-    return Object.keys(this.response).length
-  }
 }
 module.exports = Il

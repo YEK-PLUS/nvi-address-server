@@ -20,16 +20,14 @@ const instance = async(api) => {
   const IlParent = new Il({api})
   await IlParent.setData()
   await IlParent.getData()
-  await IlParent.looperCollector()
-  console.log(await IlParent.getLength());
-  //
-  // const IlceParent = new Ilce({api})
-  // await IlceParent.setData({IlParent})
-  // await IlceParent.getData()
-  //
-  // const MahalleParent = new Mahalle({api})
-  // await MahalleParent.setData({IlParent,IlceParent})
-  // await MahalleParent.getData()
+
+  const IlceParent = new Ilce({api})
+  await IlceParent.setData([IlParent])
+  await IlceParent.getData()
+
+  const MahalleParent = new Mahalle({api})
+  await MahalleParent.setData([IlParent,IlceParent])
+  await MahalleParent.getData()
   //
   // const SokakParent = new Sokak({api})
   // await SokakParent.setData({IlParent,IlceParent,MahalleParent})
