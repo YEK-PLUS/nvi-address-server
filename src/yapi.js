@@ -84,9 +84,9 @@ class Yapi {
      Object.keys(node).forEach( (i) => {
 
        const childrens = node[i];
-      if (childrens.ilceler||childrens.mahalleler||childrens.sokaklar) {
+      if (childrens.ilceler||childrens.mahalleler||childrens.sokaklar||childrens.binalar) {
           const childrenLength =  this.getLength(
-            childrens.ilceler||childrens.mahalleler||childrens.sokaklar)
+            childrens.ilceler||childrens.mahalleler||childrens.sokaklar||childrens.binalar)
           length += childrenLength
       }
       else{
@@ -106,6 +106,7 @@ class Yapi {
       return formatted?formattedData:data
     } catch (e) {
       this.errorCount ++;
+      console.log(params);
       const data = await this.connector(params,false)
       const formattedData = await this.formatData(data)
       this.fixedErrorCount++;
