@@ -19,6 +19,13 @@ const Yapi = require('../yapi')
     getNode=async(n,m,p)=>{
       return this.response[n].ilceler[m].mahalleler[p]
     }
+    getNodes=async(n,m)=>{
+      return this.response[n].ilceler[m].mahalleler
+    }
+    getNodeLength=async(n,m)=>{
+      const nodes = await this.getNodes(n,m)
+      return Object.keys(nodes).length
+    }
     looperCollector= async() =>{
       const {IlParent,IlceParent} = this.parents
       this.totalLength = await IlceParent.getLength()
@@ -54,7 +61,8 @@ const Yapi = require('../yapi')
 
 
 
-          const ilData = {kimlikNo,il,ilceler:ilHub}
+          const formattedIlHub = await this.formatData(ilHub)
+          const ilData = {kimlikNo,il,ilceler:formattedIlHub}
           await this.writer(undefined,ilData,`${kimlikNo}_`)
           hub.push(ilData)
       }
