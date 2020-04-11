@@ -11,21 +11,10 @@ const controller = require('../middlewares/controller')
 const writer = require('../middlewares/writer')
 const getter = require('../middlewares/getter')
 const adder = require('../middlewares/adder')
-class Sokak {
+const Yapi = require('../yapi')
+class Sokak extends Yapi{
   constructor(props) {
-    this.spinner = ora('Sokaklar Aliniyor').start()
-    this.props = props
-    this.fileName = 'Sokaklar'
-  }
-  errorCount = 0
-  fixedErrorCount = 0
-  setData = async ({IlParent,IlceParent,MahalleParent}) =>{
-    this.props.IlParent = IlParent
-    this.props.IlceParent = IlceParent
-    this.props.MahalleParent = MahalleParent
-  }
-  saveData = async (filename = this.filename,data = this.response) =>{
-    writer(filename,data)
+    super(props)
   }
   getNode = async (n,m,p,r)=>{
     return this.response[n].ilceler[m].mahalleler[p].sokaklar[r]
@@ -33,138 +22,66 @@ class Sokak {
   getNodes = async (n,m,p)=>{
     return this.response[n].ilceler[m].mahalleler[p].sokaklar
   }
-  getLength = async ()=>{
-    let length = 0
-    const {response }= this
-    Object.keys(response).forEach(function (il) {
-
-      Object.keys(response[il].ilceler).forEach(function (ilce) {
-
-        Object.keys(response[il].ilceler[ilce].mahalleler).forEach(function (mahalle) {
-
-          Object.keys(response[il].ilceler[ilce].mahalleler[mahalle].sokaklar).forEach(function (sokak) {
-          	length ++;
-          });
-
-        });
-
-      });
-
-    });
-    return length
-  }
   getParentNodeLength = async (n,m,p)=>{
     const nodes = await this.getNodes(n,m,p)
     return Object.keys(nodes).length
   }
-  formatData = async(data =this.response )=>{
-    const hub = {}
-    await Promise.all(
-      await data.map(async (e,i)=>{
-        hub[i+1] = (e)
-      })
-    )
-    return hub
-  }
-  getData = async (e) => {
-    if(!controller(this.fileName)){
-      await this.getDataFromNvi()
-      this.spinner.succeed('Sokaklar alindi, kayit edildi')
-    }
-    else{
-      await this.getDataFromLocal()
-      this.spinner.succeed('Sokaklar kayitli dosyadan alindi')
-    }
-  }
   looperCollector = async () => {
-    const {IlceParent,MahalleParent,IlParent,api} = this.props
-
-    const totalMahalleLength = await MahalleParent.getLength()
-    let totalMahalleProgress = 0
-
-
+    const {IlParent,IlceParent,MahalleParent} = this.parents
+    this.totalLength = await MahalleParent.getLength()
+    this.totalProgress = 0
 
     const ilLength = await IlParent.getLength()
 
     const hub = []
 
     for (var ilNumber = 1; ilNumber < ilLength+1; ilNumber++) {
-
-      const ilceLength = await IlceParent.getParentNodeLength(ilNumber)
       const il = await IlParent.getNode(ilNumber)
+      const {kimlikNo} = il
 
-      const ilHub = []
+      const ilHub = [];
 
+      const ilceLength = await IlceParent.getNodeLength(ilNumber)
       for (var ilceNumber = 1; ilceNumber < ilceLength+1; ilceNumber++) {
 
         const ilce = await IlceParent.getNode(ilNumber,ilceNumber)
-        const mahalleLength = await MahalleParent.getParentNodeLength(ilNumber,ilceNumber)
+        const {kimlikNo : ilceKimlikNo} = ilce
 
-        const ilceHub = []
+        const ilceHub = [];
 
+        const mahalleLength = await MahalleParent.getNodeLength(ilNumber,ilceNumber)
         for (var mahalleNumber = 1; mahalleNumber < mahalleLength+1; mahalleNumber++) {
 
           const mahalle = await MahalleParent.getNode(ilNumber,ilceNumber,mahalleNumber)
-          this.console(totalMahalleProgress,totalMahalleLength)
+          const {kimlikNo: mahalleKoyBaglisiKimlikNo} = mahalle
 
-          const data = await this.getter(mahalle)
+          const sokaklar = await this.connector({
+            mahalleKoyBaglisiKimlikNo
+          })
+          this.console()
 
-          const formattedData = await this.formatData(data)
-          const {kimlikNo} = mahalle
-          ilceHub.push({kimlikNo,mahalle,sokaklar:{...formattedData}})
-
-          totalMahalleProgress++;
-
+          const mahalleData = {kimlikNo:mahalleKoyBaglisiKimlikNo,mahalle,sokaklar}
+          await this.writer(undefined,mahalleData,`${kimlikNo}_${ilceKimlikNo}_${mahalleKoyBaglisiKimlikNo}_`)
+          ilceHub.push(mahalleData)
         }
 
         const formattedIlceHub = await this.formatData(ilceHub)
-        const {kimlikNo} = ilce
-        ilHub.push({kimlikNo,ilce,mahalleler:{...formattedIlceHub}})
-
+        const ilceData = {kimlikNo:ilceKimlikNo,ilce,mahalleler:formattedIlceHub}
+        await this.writer(undefined,ilceData,`${kimlikNo}_${ilceKimlikNo}_`)
+        ilHub.push(ilceData)
       }
+
       const formattedIlHub = await this.formatData(ilHub)
-      const {kimlikNo} = il
-      const ilData = {kimlikNo,il,ilceler:{...formattedIlHub}}
-      this.saveData(`${il.kimlikNo}-sokaklar`,ilData)
+      const ilData = {kimlikNo,il,ilceler:formattedIlHub}
+      await this.writer(undefined,ilData,`${kimlikNo}_`)
       hub.push(ilData)
-
     }
-
-
     return await this.formatData(hub)
-  }
-  console = (now,total) => {
-    const text = `Sokaklar Aliniyor | ${now}/${total}`
-    const errorExtendion = `Hata Sayisi ${this.errorCount}`
-    const fixedErrorExtendion = `Duzeltilen Hata Sayisi ${this.fixedErrorCount}`
-    this.spinner.text = `${text} ${errorExtendion} ${fixedErrorExtendion}`
 
   }
-  getter = async (e) =>{
-    const {api} = this.props
-    try {
-      const sokaklar = (
-        await api.post('yolListesi',{
-          mahalleKoyBaglisiKimlikNo:e.kimlikNo
-        })
-      ).data
-      return sokaklar
-    } catch {
-      this.errorCount ++;
-      const sokaklar = await this.getter(e)
-      this.fixedErrorCount ++;
-      return sokaklar
-    }
-  }
-  getDataFromNvi = async () =>{
-    const sokaklar = await this.looperCollector()
-    this.response = sokaklar
-    // await this.formatData()
-    await this.saveData()
-  }
-  getDataFromLocal = async () =>{
-    const sokaklar = await getter(this.fileName)
-    this.response = sokaklar
-  }
+  constructorName='Sokaklar'
+  mainFileName = 'Sokaklar'
+  path='yolListesi'
+  argument='mahalleKoyBaglisiKimlikNo'
 }
 module.exports = Sokak
