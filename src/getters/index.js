@@ -33,6 +33,10 @@ const instance = async(api) => {
   await SokakParent.setData({IlParent,IlceParent,MahalleParent})
   await SokakParent.getData()
 
+  const BinaParent = new Bina({api})
+  await BinaParent.setData({IlParent,IlceParent,MahalleParent,SokakParent})
+  await BinaParent.getData()
+
 }
 
 module.exports = instance
