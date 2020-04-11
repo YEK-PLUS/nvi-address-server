@@ -16,6 +16,12 @@ class Il extends Yapi{
   constructor(props) {
     super(props)
   }
+  getNode=async(n)=>{
+    return this.response[n]
+  }
+  looperCollector= async() =>{
+    return await this.connector()
+  }
   constructorName='Iller'
   mainFileName = 'Iller'
   path='ilListesi'

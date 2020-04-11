@@ -22,13 +22,13 @@ const instance = async(api) => {
   await IlParent.getData()
 
   const IlceParent = new Ilce({api})
-  await IlceParent.setData([IlParent])
+  await IlceParent.setData({IlParent})
   await IlceParent.getData()
 
   const MahalleParent = new Mahalle({api})
-  await MahalleParent.setData([IlParent,IlceParent])
+  await MahalleParent.setData({IlParent,IlceParent})
   await MahalleParent.getData()
-  //
+  // //
   // const SokakParent = new Sokak({api})
   // await SokakParent.setData({IlParent,IlceParent,MahalleParent})
   // await SokakParent.getData()

@@ -16,9 +16,53 @@ const Yapi = require('../yapi')
     constructor(props) {
       super(props)
     }
+    getNode=async(n,m,p)=>{
+      return this.response[n].ilceler[m].mahalleler[p]
+    }
+    looperCollector= async() =>{
+      const {IlParent,IlceParent} = this.parents
+      this.totalLength = await IlceParent.getLength()
+      this.totalProgress = 0
+
+
+      const ilLength = await IlParent.getLength()
+
+      const hub = []
+
+      for (var ilNumber = 1; ilNumber < ilLength+1; ilNumber++) {
+
+          const il = await IlParent.getNode(ilNumber)
+          const {kimlikNo} = il
+
+          const ilHub = [];
+
+          const ilceLength = await IlceParent.getNodeLength(ilNumber)
+          for (var ilceNumber = 1; ilceNumber < ilceLength+1; ilceNumber++) {
+
+              const ilce = await IlceParent.getNode(ilNumber,ilceNumber)
+              const {kimlikNo : ilceKimlikNo} = ilce
+
+              const mahalleler = await this.connector({
+                ilceKimlikNo
+              })
+              this.console()
+
+              const ilceData = {kimlikNo:ilceKimlikNo,ilce,mahalleler}
+              await this.writer(undefined,ilceData,`${kimlikNo}_${ilceKimlikNo}_`)
+              ilHub.push(ilceData)
+          }
+
+
+
+          const ilData = {kimlikNo,il,ilceler:ilHub}
+          await this.writer(undefined,ilData,`${kimlikNo}_`)
+          hub.push(ilData)
+      }
+      return await this.formatData(hub)
+    }
     constructorName='Mahalleler'
     mainFileName = 'Mahalleler'
-    path='mahalleListesi'
-    argument='mahalleKoyBaglisiListesi'
+    path='mahalleKoyBaglisiListesi'
+    argument='ilceKimlikNo'
 }
 module.exports = Mahalle
