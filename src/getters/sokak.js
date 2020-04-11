@@ -22,7 +22,7 @@ class Sokak extends Yapi{
   getNodes = async (n,m,p)=>{
     return this.response[n].ilceler[m].mahalleler[p].sokaklar
   }
-  getParentNodeLength = async (n,m,p)=>{
+  getNodeLength = async (n,m,p)=>{
     const nodes = await this.getNodes(n,m,p)
     return Object.keys(nodes).length
   }
