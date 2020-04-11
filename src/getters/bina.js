@@ -16,14 +16,14 @@ class Bina extends Yapi{
   constructor(props) {
     super(props)
   }
-  getNode = async (n,m,p,r)=>{
-    return this.response[n].ilceler[m].mahalleler[p].sokaklar[r]
+  getNode = async (n,m,p,r,s)=>{
+    return this.response[n].ilceler[m].mahalleler[p].sokaklar[r].binalar[s]
   }
-  getNodes = async (n,m,p)=>{
-    return this.response[n].ilceler[m].mahalleler[p].sokaklar
+  getNodes = async (n,m,p,r)=>{
+    return this.response[n].ilceler[m].mahalleler[p].sokaklar[r].binalar
   }
-  getParentNodeLength = async (n,m,p)=>{
-    const nodes = await this.getNodes(n,m,p)
+  getNodeLength = async (n,m,p,r)=>{
+    const nodes = await this.getNodes(n,m,p,r)
     return Object.keys(nodes).length
   }
   looperCollector = async () => {
@@ -60,7 +60,7 @@ class Bina extends Yapi{
           const sokakLength = await SokakParent.getNodeLength(ilNumber,ilceNumber,mahalleNumber)
           for (var sokakNumber = 1; sokakNumber < sokakLength+1; sokakNumber++) {
             const sokak = await SokakParent.getNode(ilNumber,ilceNumber,mahalleNumber,sokakNumber)
-            const {kimlikNo: yolKimlikNo} = mahalle
+            const {kimlikNo: yolKimlikNo} = sokak
 
             const binalar = await this.connector({
               mahalleKoyBaglisiKimlikNo,
