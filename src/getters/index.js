@@ -11,6 +11,7 @@ const Ilce = require('./ilce')
 const Mahalle = require('./mahalle')
 const Sokak = require('./sokak')
 const Bina = require('./bina')
+const BagimsizBolum = require('./bagimsizbolum')
 const writer = require('../middlewares/writer')
 const getter = require('../middlewares/getter')
 const controller = require('../middlewares/controller')
@@ -36,6 +37,10 @@ const instance = async(api) => {
   const BinaParent = new Bina({api})
   await BinaParent.setData({IlParent,IlceParent,MahalleParent,SokakParent})
   await BinaParent.getData()
+
+  const BagimsizBolumParent = new BagimsizBolum({api})
+  await BagimsizBolumParent.setData({IlParent,IlceParent,MahalleParent,SokakParent,BinaParent})
+  await BagimsizBolumParent.getData()
 
 }
 
