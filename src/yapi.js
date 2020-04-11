@@ -19,6 +19,9 @@ class Yapi {
     if(!this.totalLength){
       this.totalLength = 1;
     }
+    if(!this.length){
+      this.length = 0;
+    }
     this.spinner = ora(`${this.constructorName} Aliniyor`).start()
   }
 
@@ -59,8 +62,8 @@ class Yapi {
       this.progress++;
     }
     const text = `${constructorName} Aliniyor | ${progress}/${totalLength}`
-    const errorExtendion = `Hata Sayisi ${errorCount}`
-    const fixedErrorExtendion = `Duzeltilen Hata Sayisi ${fixedErrorCount}`
+    const errorExtendion = errorCount>0?`Hata Sayisi ${errorCount}`:''
+    const fixedErrorExtendion = fixedErrorCount>0?`Duzeltilen Hata Sayisi ${fixedErrorCount}`:''
     this.spinner.text = `${text} ${errorExtendion} ${fixedErrorExtendion}`
 
   }
@@ -75,25 +78,24 @@ class Yapi {
       this.spinner.succeed(`${this.constructorName} kayitli dosyadan alindi`)
     }
   }
-  getLength = async(node=this.response)=>{
-    if (this.length) {
-      return this.length
-    }
-    else{
-      let length = 0;
+  getLength = (node=this.response)=>{
 
-         await Object.keys(node).forEach(async (childrens) => {
-          if (childrens.childrens) {
-              const childrenLength = await this.getLength(childrens.childrens)
-              length += childrenLength
-          }
-          else{
-            length++;
-          }
-        })
+    let length = 0
+     Object.keys(node).forEach( (i) => {
 
-      return length;
-    }
+       const childrens = node[i];
+      if (childrens.ilceler||childrens.mahalleler||childrens.sokaklar) {
+          const childrenLength =  this.getLength(
+            childrens.ilceler||childrens.mahalleler||childrens.sokaklar)
+          length += childrenLength
+      }
+      else{
+        length++;
+      }
+
+    })
+
+    return length;
   }
   connector = async(params,formatted=true) => {
     const {path} = this
